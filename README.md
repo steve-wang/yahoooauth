@@ -38,8 +38,8 @@ Below is a sample that indicates how simply you can use it.
 	func main() {
 		srv := Server{
 			yahoo: yahoooauth.NewYahooOauth(
-				"dj0yJmk9djNDV0RMZ1BsamVHJmQ9WVdrOWIybDBSSGhqTnpRbWNHbzlOVEl3TkRZMU16WXkmcz1jb25zdW1lcnNlY3JldCZ4PTYz",
-				"66dd864d046a95e6854989ef11935a7c00b56ad7",
+				"xxx",	// your consumer key got form yahoo developer website
+				"xxxxx",// your consumer secret got form yahoo developer website
 				"http://localhost/callback"),
 		}
 		http.HandleFunc("/", srv.welcome)
