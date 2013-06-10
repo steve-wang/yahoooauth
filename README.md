@@ -3,7 +3,7 @@ yahoooauth
 
 Yahoooauth is a simple library written in Go that can let your customers login your website with their yahoo accounts, of course,  on condition that your website is built upon the power of Go.
 
-Below is a sample that indicates how simply you can use it.
+Below is a sample that indicates how easily you can use it.
 
 	package main
 	
