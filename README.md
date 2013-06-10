@@ -8,7 +8,7 @@ Below is a sample that indicates how simply you can use it.
 	package main
 	
 	import (
-	"fmt"
+		"fmt"
 		"github.com/steve-wang/yahoooauth"
 		"net/http"
 	)
