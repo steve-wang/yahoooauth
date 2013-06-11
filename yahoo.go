@@ -161,7 +161,8 @@ func (p *YahooOauth) FetchResource(resource string) (io.ReadCloser, error) {
 }
 
 func (p *YahooOauth) RequestLoginURL() (string, error) {
-	resp, err := http.Get("https://api.login.yahoo.com/oauth/v2/get_request_token?" +
+	resp, err := http.PostForm(
+		"https://api.login.yahoo.com/oauth/v2/get_request_token",
 		url.Values{
 			"oauth_consumer_key":     {p.consumer_token},
 			"oauth_nonce":            {p.newNonce()},
@@ -171,7 +172,7 @@ func (p *YahooOauth) RequestLoginURL() (string, error) {
 			"oauth_version":          {"1.0"},
 			"xoauth_lang_pref":       {"en-us"},
 			"oauth_callback":         {p.callback_uri},
-		}.Encode())
+		})
 	if err != nil {
 		return "", err
 	}
