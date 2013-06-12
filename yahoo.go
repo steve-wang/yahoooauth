@@ -105,6 +105,22 @@ func (p *YahooOauth) popToken(token string) (string, bool) {
 	return secret, true
 }
 
+func (p *YahooOauth) sign(key, method, uri string, params url.Values) {
+	txt := encodeAll(method, uri, params)
+	sig := hmac_sha1(txt, p.consumer_secret+"&"+key)
+	params.Set("oauth_signature", sig)
+}
+
+func (p *YahooOauth) postForm(key, uri string, params url.Values) (*http.Response, error) {
+	params.Set("oauth_consumer_key", p.consumer_token)
+	params.Set("oauth_signature_method", "HMAC-SHA1")
+	params.Set("oauth_nonce", p.newNonce())
+	params.Set("oauth_timestamp", p.newTimeStamp())
+	params.Set("oauth_version", "1.0")
+	p.sign(key, "POST", uri, params)
+	return http.PostForm(uri, params)
+}
+
 func (p *YahooOauth) exchange(form url.Values) (url.Values, error) {
 	oauth_token := form.Get("oauth_token")
 	secret, ok := p.popToken(oauth_token)
@@ -112,16 +128,12 @@ func (p *YahooOauth) exchange(form url.Values) (url.Values, error) {
 		return nil, fmt.Errorf("token(%s) is not found", oauth_token)
 	}
 	oauth_verifier := form.Get("oauth_verifier")
-	resp, err := http.PostForm("https://api.login.yahoo.com/oauth/v2/get_token", url.Values{
-		"oauth_consumer_key":     {p.consumer_token},
-		"oauth_signature_method": {"plaintext"},
-		"oauth_nonce":            {p.newNonce()},
-		"oauth_signature":        {p.consumer_secret + "&" + secret},
-		"oauth_timestamp":        {p.newTimeStamp()},
-		"oauth_verifier":         {oauth_verifier},
-		"oauth_version":          {"1.0"},
-		"oauth_token":            {oauth_token},
-	})
+	uri := "https://api.login.yahoo.com/oauth/v2/get_token"
+	params := url.Values{
+		"oauth_verifier": {oauth_verifier},
+		"oauth_token":    {oauth_token},
+	}
+	resp, err := p.postForm(secret, uri, params)
 	if err != nil {
 		return nil, err
 	}
@@ -138,22 +150,11 @@ func (p *YahooOauth) FetchResource(resource string) (io.ReadCloser, error) {
 		p.xoauth_yahoo_guid,
 		resource)
 	params := url.Values{
-		"format":                 {"json"},
-		"realm":                  {"yahooapis.com"},
-		"oauth_consumer_key":     {p.consumer_token},
-		"oauth_nonce":            {p.newNonce()},
-		"oauth_signature_method": {"HMAC-SHA1"},
-		"oauth_timestamp":        {p.newTimeStamp()},
-		"oauth_token":            {p.oauth_token},
-		"oauth_version":          {"1.0"},
+		"format":      {"json"},
+		"realm":       {"yahooapis.com"},
+		"oauth_token": {p.oauth_token},
 	}
-	signature := func() string {
-		txt := encodeAll("GET", uri, params)
-		key := p.consumer_secret + "&" + p.oauth_token_secret
-		return hmac_sha1(txt, key)
-	}()
-	params.Add("oauth_signature", signature)
-	resp, err := http.Get(uri + "?" + params.Encode())
+	resp, err := p.postForm(p.oauth_token_secret, uri, params)
 	if err != nil {
 		return nil, err
 	}
@@ -161,18 +162,12 @@ func (p *YahooOauth) FetchResource(resource string) (io.ReadCloser, error) {
 }
 
 func (p *YahooOauth) RequestLoginURL() (string, error) {
-	resp, err := http.PostForm(
-		"https://api.login.yahoo.com/oauth/v2/get_request_token",
-		url.Values{
-			"oauth_consumer_key":     {p.consumer_token},
-			"oauth_nonce":            {p.newNonce()},
-			"oauth_signature_method": {"plaintext"},
-			"oauth_signature":        {p.consumer_secret + "&"},
-			"oauth_timestamp":        {p.newTimeStamp()},
-			"oauth_version":          {"1.0"},
-			"xoauth_lang_pref":       {"en-us"},
-			"oauth_callback":         {p.callback_uri},
-		})
+	uri := "https://api.login.yahoo.com/oauth/v2/get_request_token"
+	params := url.Values{
+		"xoauth_lang_pref": {"en-us"},
+		"oauth_callback":   {p.callback_uri},
+	}
+	resp, err := p.postForm("", uri, params)
 	if err != nil {
 		return "", err
 	}
@@ -217,4 +212,3 @@ func (p *YahooOauth) FetchProfile() (*Profile, error) {
 	}
 	return &info.Info, nil
 }
-
