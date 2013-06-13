@@ -118,6 +118,16 @@ func (p *YahooOauth) postForm(key, uri string, params url.Values) (*http.Respons
 	return http.PostForm(uri, params)
 }
 
+func (p *YahooOauth) getForm(key, uri string, params url.Values) (*http.Response, error) {
+	params.Set("oauth_consumer_key", p.consumer_token)
+	params.Set("oauth_signature_method", "HMAC-SHA1")
+	params.Set("oauth_nonce", p.newNonce())
+	params.Set("oauth_timestamp", p.newTimeStamp())
+	params.Set("oauth_version", "1.0")
+	p.sign(key, "GET", uri, params)
+	return http.Get(uri + "?" + params.Encode())
+}
+
 func (p *YahooOauth) exchange(form url.Values) (url.Values, error) {
 	oauth_token := form.Get("oauth_token")
 	secret, ok := p.popToken(oauth_token)
