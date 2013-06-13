@@ -27,10 +27,7 @@ Below is a sample that indicates how easily you can use it.
 	
 	func (p *Server) callback(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
-		if err := p.yahoo.FetchAccessToken(r.Form); err != nil {
-			return
-		}
-		profile, err := p.yahoo.FetchProfile()
+		profile, err := p.yahoo.FetchProfile(r.Form)
 		if err != nil {
 			return
 		}
