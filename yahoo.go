@@ -193,18 +193,6 @@ func (p *YahooOauth) RequestLoginURL() (string, error) {
 	return form.Get("xoauth_request_auth_url"), nil
 }
 
-func (p *YahooOauth) FetchAccessToken(r *http.Request) error {
-	r.ParseForm()
-	form, err := p.exchange(r.Form)
-	if err != nil {
-		return err
-	}
-	p.oauth_token = form.Get("oauth_token")
-	p.oauth_token_secret = form.Get("oauth_token_secret")
-	p.xoauth_yahoo_guid = form.Get("xoauth_yahoo_guid")
-	return nil
-}
-
 func (p *YahooOauth) FetchProfile(form url.Values) (*Profile, error) {
 	params, err := p.exchange(form)
 	if err != nil {
