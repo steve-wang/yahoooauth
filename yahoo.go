@@ -62,9 +62,6 @@ type YahooOauth struct {
 	consumer_token     string
 	consumer_secret    string
 	callback_uri       string
-	oauth_token        string
-	oauth_token_secret string
-	xoauth_yahoo_guid  string
 }
 
 func NewYahooOauth(consumer_token, consumer_secret, callback_uri string) *YahooOauth {
@@ -145,16 +142,16 @@ func (p *YahooOauth) exchange(form url.Values) (url.Values, error) {
 	return url.ParseQuery(string(data))
 }
 
-func (p *YahooOauth) FetchResource(resource string) (io.ReadCloser, error) {
+func (p *YahooOauth) fetchResource(resource, guid, token, secret string) (io.ReadCloser, error) {
 	uri := fmt.Sprintf("http://social.yahooapis.com/v1/user/%s/%s",
-		p.xoauth_yahoo_guid,
+		guid,
 		resource)
 	params := url.Values{
 		"format":      {"json"},
 		"realm":       {"yahooapis.com"},
-		"oauth_token": {p.oauth_token},
+		"oauth_token": {token},
 	}
-	resp, err := p.postForm(p.oauth_token_secret, uri, params)
+	resp, err := p.getForm(secret, uri, params)
 	if err != nil {
 		return nil, err
 	}
@@ -198,8 +195,15 @@ func (p *YahooOauth) FetchAccessToken(r *http.Request) error {
 	return nil
 }
 
-func (p *YahooOauth) FetchProfile() (*Profile, error) {
-	resp, err := p.FetchResource("profile")
+func (p *YahooOauth) FetchProfile(form url.Values) (*Profile, error) {
+	params, err := p.exchange(form)
+	if err != nil {
+		return nil, err
+	}
+	token := params.Get("oauth_token")
+	secret := params.Get("oauth_token_secret")
+	guid := params.Get("xoauth_yahoo_guid")
+	resp, err := p.fetchResource("profile", guid, token, secret)
 	if err != nil {
 		return nil, err
 	}
